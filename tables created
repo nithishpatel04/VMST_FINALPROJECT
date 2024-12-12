@@ -1,0 +1,60 @@
+CREATE DATABASE VehicleMaintenanceDB;
+
+USE VehicleMaintenanceDB;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(50) NOT NULL,
+    role VARCHAR(50) NOT NULL
+);
+INSERT INTO users (username, password, role) VALUES
+('owner1', 'password1', 'Vehicle Owner'),
+('tech1', 'password2', 'Service Technician'),
+('admin1', 'password3', 'Administrator');
+
+CREATE TABLE vehicles (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    make VARCHAR(50),
+    model VARCHAR(50),
+    year INT,
+    vin VARCHAR(17) UNIQUE,
+    license_plate VARCHAR(15) UNIQUE
+);
+
+CREATE TABLE vehicle_maintenance_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    maintenance_date DATE NOT NULL,
+    description TEXT NOT NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id)
+);
+
+ALTER TABLE vehicle_maintenance_log
+ADD COLUMN vehicle_make VARCHAR(100),
+ADD COLUMN vehicle_model VARCHAR(100);
+
+CREATE TABLE vehicle_status (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT,
+    maintenance_date DATE,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id)
+);
+
+
+select * from users;
+
+select * from vehicles;
+
+select * from vehicle_maintenance_log;
+
+select * from vehicle_status;
+
+
+
+
+
+
+
