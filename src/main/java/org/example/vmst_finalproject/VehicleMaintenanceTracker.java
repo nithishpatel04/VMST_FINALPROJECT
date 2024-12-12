@@ -8,6 +8,8 @@ import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import java.time.LocalDate;
+import javafx.scene.control.cell.PropertyValueFactory;
+
 
 
 import java.util.List;
@@ -308,17 +310,15 @@ public class VehicleMaintenanceTracker extends Application {
         Button assignedVehiclesButton = createStyledButton("View Assigned Vehicles");
         Button logMaintenanceButton = createStyledButton("Log Maintenance");
         Button updateStatusButton = createStyledButton("Update Vehicle Status");
-        Button scheduleMaintenanceButton = createStyledButton("Schedule Maintenance");
         Button backButton = createStyledButton("Back to Main Menu");
 
         assignedVehiclesButton.setOnAction(event -> stage.setScene(new Scene(createAssignedVehiclesScene(stage), 600, 450)));
         logMaintenanceButton.setOnAction(event -> stage.setScene(new Scene(createLogMaintenanceScene(stage), 600, 450)));
         updateStatusButton.setOnAction(event -> stage.setScene(new Scene(createUpdateVehicleStatusScene(stage), 600, 450)));
-        scheduleMaintenanceButton.setOnAction(event -> stage.setScene(new Scene(createScheduleMaintenanceScene(stage), 600, 450)));
 
         backButton.setOnAction(event -> stage.setScene(new Scene(createMainMenu(stage), 600, 450)));
 
-        technicianDashboard.getChildren().addAll(title, assignedVehiclesButton, logMaintenanceButton, updateStatusButton, scheduleMaintenanceButton, backButton);
+        technicianDashboard.getChildren().addAll(title, assignedVehiclesButton, logMaintenanceButton, updateStatusButton, backButton);
         return technicianDashboard;
     }
 
@@ -354,8 +354,8 @@ public class VehicleMaintenanceTracker extends Application {
         Label instructions = new Label("Enter maintenance details:");
         instructions.setFont(Font.font("Arial", 14));
 
-        TextField vinField = new TextField();
-        vinField.setPromptText("Enter Vehicle VIN");
+        TextField vehicleIdField = new TextField();
+        vehicleIdField.setPromptText("Enter Vehicle ID");
 
         DatePicker datePicker = new DatePicker();
         datePicker.setPromptText("Select Maintenance Date");
@@ -366,46 +366,44 @@ public class VehicleMaintenanceTracker extends Application {
 
         Button saveButton = createStyledButton("Save");
         saveButton.setOnAction(event -> {
-            String vin = vinField.getText();
+            String vehicleIdText = vehicleIdField.getText();
             LocalDate scheduleDate = datePicker.getValue();
             String description = maintenanceDetails.getText();
 
             // Validate the input fields
-            if (vin.isEmpty() || scheduleDate == null || description.isEmpty()) {
+            if (vehicleIdText.isEmpty() || scheduleDate == null || description.isEmpty()) {
                 System.out.println("Please enter all fields.");
                 return;
             }
 
-            // Create an instance of VehicleLog to fetch vehicleId from VIN and save the maintenance log
-            VehicleLog vehicleLog = new VehicleLog();
+            try {
+                int vehicleId = Integer.parseInt(vehicleIdText); // Parse vehicleId as an integer
 
-            // Fetch vehicleId using the VIN
-            int vehicleId = vehicleLog.getVehicleIdByVin(vin);
+                // Convert LocalDate to string in the desired format
+                String scheduleDateStr = scheduleDate.toString(); // "YYYY-MM-DD"
 
-            if (vehicleId == -1) {
-                System.out.println("Vehicle with VIN " + vin + " not found.");
-                return;
-            }
+                // Create an instance of VehicleLog and save the maintenance log
+                VehicleLog vehicleLog = new VehicleLog();
+                boolean isSaved = vehicleLog.TechnicianMaintenanceActivity(vehicleId, scheduleDateStr, description);
 
-            // Convert LocalDate to string in the desired format
-            String scheduleDateStr = scheduleDate.toString(); // "YYYY-MM-DD"
-
-            // Log the maintenance activity using the vehicleId
-            boolean isSaved = vehicleLog.logMaintenance(vehicleId, scheduleDateStr, description);
-
-            if (isSaved) {
-                System.out.println("Maintenance details logged successfully.");
-            } else {
-                System.out.println("Failed to log maintenance details.");
+                if (isSaved) {
+                    System.out.println("Maintenance details logged successfully.");
+                    showAlert("Details Saved", "Maintenance details logged successfully.");
+                } else {
+                    System.out.println("Failed to log maintenance details.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid Vehicle ID. Please enter a valid numeric vehicle ID.");
             }
         });
 
         Button backButton = createStyledButton("Back");
         backButton.setOnAction(event -> stage.setScene(new Scene(createTechnicianDashboard(stage), 600, 450)));
 
-        layout.getChildren().addAll(instructions, vinField, datePicker, maintenanceDetails, saveButton, backButton);
+        layout.getChildren().addAll(instructions, vehicleIdField, datePicker, maintenanceDetails, saveButton, backButton);
         return layout;
     }
+
 
     private VBox createUpdateVehicleStatusScene(Stage stage) {
         VBox layout = createBaseScene("Update Vehicle Status");
@@ -413,43 +411,53 @@ public class VehicleMaintenanceTracker extends Application {
         Label instructions = new Label("Update vehicle status:");
         instructions.setFont(Font.font("Arial", 14));
 
-        TextField vinField = new TextField();
-        vinField.setPromptText("Enter Vehicle VIN");
+        TextField vehicleIdField = new TextField();  // Accept vehicleId directly
+        vehicleIdField.setPromptText("Enter Vehicle ID");
 
         TextField statusField = new TextField();
         statusField.setPromptText("Enter New Status");
 
         Button updateButton = createStyledButton("Update");
-        updateButton.setOnAction(event -> showAlert("Success", "Vehicle status updated successfully."));
+        updateButton.setOnAction(event -> {
+            String vehicleIdText = vehicleIdField.getText();
+            String newStatus = statusField.getText();
+
+            // Validate the input fields
+            if (vehicleIdText.isEmpty() || newStatus.isEmpty()) {
+                System.out.println("Please enter both Vehicle ID and status.");
+                return;
+            }
+
+            try {
+                int vehicleId = Integer.parseInt(vehicleIdText); // Convert the vehicleId to an integer
+
+                // Create an instance of VehicleLog to update the vehicle status
+                VehicleLog vehicleLog = new VehicleLog();
+
+                // Update vehicle status in the vehicle_status table
+                boolean isUpdated = vehicleLog.updateVehicleStatus(vehicleId, newStatus);
+
+                if (isUpdated) {
+                    System.out.println("Vehicle status updated successfully.");
+                    showAlert("Update Successful", "Vehicle status has been updated successfully.");
+                } else {
+                    System.out.println("Failed to update vehicle status.");
+                    showAlert("Update Failed", "Could not update vehicle status. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid numeric value for Vehicle ID.");
+                showAlert("Invalid Input", "Vehicle ID must be a numeric value.");
+            }
+        });
 
         Button backButton = createStyledButton("Back");
         backButton.setOnAction(event -> stage.setScene(new Scene(createTechnicianDashboard(stage), 600, 450)));
 
-        layout.getChildren().addAll(instructions, vinField, statusField, updateButton, backButton);
+        layout.getChildren().addAll(instructions, vehicleIdField, statusField, updateButton, backButton);
         return layout;
     }
 
-    private VBox createScheduleMaintenanceScene(Stage stage) {
-        VBox layout = createBaseScene("Schedule Maintenance");
 
-        Label instructions = new Label("Schedule maintenance for a vehicle:");
-        instructions.setFont(Font.font("Arial", 14));
-
-        TextField vinField = new TextField();
-        vinField.setPromptText("Enter Vehicle VIN");
-
-        DatePicker maintenanceDate = new DatePicker();
-        maintenanceDate.setPromptText("Select Maintenance Date");
-
-        Button scheduleButton = createStyledButton("Schedule");
-        scheduleButton.setOnAction(event -> showAlert("Success", "Maintenance scheduled successfully."));
-
-        Button backButton = createStyledButton("Back");
-        backButton.setOnAction(event -> stage.setScene(new Scene(createTechnicianDashboard(stage), 600, 450)));
-
-        layout.getChildren().addAll(instructions, vinField, maintenanceDate, scheduleButton, backButton);
-        return layout;
-    }
 
     private VBox createBaseScene(String titleText) {
         VBox layout = new VBox(15);
@@ -472,16 +480,14 @@ public class VehicleMaintenanceTracker extends Application {
 
         Button manageUsersButton = createStyledButton("Manage Users");
         Button overseeActivitiesButton = createStyledButton("Oversee System Activities");
-        Button generateReportsButton = createStyledButton("Generate Reports");
         Button backButton = createStyledButton("Back to Main Menu");
 
         manageUsersButton.setOnAction(event -> stage.setScene(new Scene(createManageUsersScene(stage), 600, 450)));
         overseeActivitiesButton.setOnAction(event -> stage.setScene(new Scene(createOverseeActivitiesScene(stage), 600, 450)));
-        generateReportsButton.setOnAction(event -> stage.setScene(new Scene(createGenerateReportsScene(stage), 600, 450)));
 
         backButton.setOnAction(event -> stage.setScene(new Scene(createMainMenu(stage), 600, 450)));
 
-        adminDashboard.getChildren().addAll(title, manageUsersButton, overseeActivitiesButton, generateReportsButton, backButton);
+        adminDashboard.getChildren().addAll(title, manageUsersButton, overseeActivitiesButton, backButton);
         return adminDashboard;
     }
     private VBox createManageUsersScene(Stage stage) {
@@ -494,16 +500,173 @@ public class VehicleMaintenanceTracker extends Application {
         Button editUserButton = createStyledButton("Edit User Details");
         Button deleteUserButton = createStyledButton("Delete User");
 
-        addUserButton.setOnAction(event -> showAlert("Feature", "Add New User"));
-        editUserButton.setOnAction(event -> showAlert("Feature", "Edit User Details"));
-        deleteUserButton.setOnAction(event -> showAlert("Feature", "Delete User"));
+        // Set actions for the buttons to navigate to the corresponding forms
+        addUserButton.setOnAction(event -> stage.setScene(new Scene(createAddUserScene(stage), 600, 450)));
+        editUserButton.setOnAction(event -> stage.setScene(new Scene(createEditUserScene(stage), 600, 450)));
+        deleteUserButton.setOnAction(event -> stage.setScene(new Scene(createDeleteUserScene(stage), 600, 450)));
 
+        // Back button to navigate to Admin Dashboard
         Button backButton = createStyledButton("Back");
         backButton.setOnAction(event -> stage.setScene(new Scene(createAdminDashboard(stage), 600, 450)));
 
         layout.getChildren().addAll(instructions, addUserButton, editUserButton, deleteUserButton, backButton);
         return layout;
     }
+
+    private VBox createAddUserScene(Stage stage) {
+        VBox layout = createBaseScene("Add New User");
+
+        Label instructions = new Label("Enter new user details:");
+        instructions.setFont(Font.font("Arial", 14));
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Enter Username");
+
+        TextField roleField = new TextField();
+        roleField.setPromptText("Enter Role (e.g., Admin, Technician)");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Enter Password");
+
+        // Create an instance of UserManager to call methods for saving data
+        UserManager userManager = new UserManager();
+
+        Button saveButton = createStyledButton("Save");
+        saveButton.setOnAction(event -> {
+            String username = usernameField.getText();
+            String role = roleField.getText();
+            String password = passwordField.getText();
+
+            // Validate the input fields
+            if (username.isEmpty() || role.isEmpty() || password.isEmpty()) {
+                System.out.println("Please fill in all fields.");
+                showAlert("Validation Error", "All fields are required.");
+                return;
+            }
+
+            // Call the saveUserToDatabase method from UserManager
+            boolean isSaved = userManager.saveUserToDatabase(username, role, password);
+
+            if (isSaved) {
+                System.out.println("User added successfully.");
+                showAlert("Success", "User added successfully.");
+            } else {
+                System.out.println("Failed to add user.");
+                showAlert("Error", "Could not add user. Please try again.");
+            }
+        });
+
+        Button backButton = createStyledButton("Back");
+        backButton.setOnAction(event -> stage.setScene(new Scene(createManageUsersScene(stage), 600, 450)));
+
+        layout.getChildren().addAll(instructions, usernameField, roleField, passwordField, saveButton, backButton);
+        return layout;
+    }
+
+    private VBox createEditUserScene(Stage stage) {
+        VBox layout = createBaseScene("Edit User Details");
+
+        Label instructions = new Label("Edit existing user details:");
+        instructions.setFont(Font.font("Arial", 14));
+
+        TextField userIdField = new TextField();
+        userIdField.setPromptText("Enter User ID");
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Enter New Username");
+
+        TextField roleField = new TextField();
+        roleField.setPromptText("Enter New Role");
+
+        // Create an instance of UserManager to call methods for updating data
+        UserManager userManager = new UserManager();
+
+        Button saveButton = createStyledButton("Save Changes");
+        saveButton.setOnAction(event -> {
+            String userId = userIdField.getText();
+            String newUsername = usernameField.getText();
+            String newRole = roleField.getText();
+
+            // Validate the input fields
+            if (userId.isEmpty() || newUsername.isEmpty() || newRole.isEmpty()) {
+                System.out.println("Please fill in all fields.");
+                showAlert("Validation Error", "All fields are required.");
+                return;
+            }
+
+            try {
+                int userIdInt = Integer.parseInt(userId);
+
+                // Call the updateUserInDatabase method from UserManager
+                boolean isUpdated = userManager.updateUserInDatabase(userIdInt, newUsername, newRole);
+
+                if (isUpdated) {
+                    System.out.println("User details updated successfully.");
+                    showAlert("Success", "User details updated successfully.");
+                } else {
+                    System.out.println("Failed to update user details.");
+                    showAlert("Error", "Could not update user details. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid User ID format.");
+                showAlert("Validation Error", "User ID must be numeric.");
+            }
+        });
+
+        Button backButton = createStyledButton("Back");
+        backButton.setOnAction(event -> stage.setScene(new Scene(createManageUsersScene(stage), 600, 450)));
+
+        layout.getChildren().addAll(instructions, userIdField, usernameField, roleField, saveButton, backButton);
+        return layout;
+    }
+
+    private VBox createDeleteUserScene(Stage stage) {
+        VBox layout = createBaseScene("Delete User");
+
+        Label instructions = new Label("Delete an existing user:");
+        instructions.setFont(Font.font("Arial", 14));
+
+        TextField userIdField = new TextField();
+        userIdField.setPromptText("Enter User ID");
+
+        Button deleteButton = createStyledButton("Delete User");
+        deleteButton.setOnAction(event -> {
+            String userId = userIdField.getText();
+
+            // Validate the input field
+            if (userId.isEmpty()) {
+                System.out.println("Please enter the User ID.");
+                showAlert("Validation Error", "User ID is required.");
+                return;
+            }
+
+            try {
+                int userIdInt = Integer.parseInt(userId);
+
+                // Create an instance of UserManager and call deleteUserFromDatabase
+                UserManager userManager = new UserManager();
+                boolean isDeleted = userManager.deleteUserFromDatabase(userIdInt);
+
+                if (isDeleted) {
+                    System.out.println("User deleted successfully.");
+                    showAlert("Success", "User deleted successfully.");
+                } else {
+                    System.out.println("Failed to delete user.");
+                    showAlert("Error", "Could not delete user. Please try again.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid User ID format.");
+                showAlert("Validation Error", "User ID must be numeric.");
+            }
+        });
+
+        Button backButton = createStyledButton("Back");
+        backButton.setOnAction(event -> stage.setScene(new Scene(createManageUsersScene(stage), 600, 450)));
+
+        layout.getChildren().addAll(instructions, userIdField, deleteButton, backButton);
+        return layout;
+    }
+
     private VBox createOverseeActivitiesScene(Stage stage) {
         VBox layout = createBaseScene("Oversee System Activities");
 
@@ -513,40 +676,72 @@ public class VehicleMaintenanceTracker extends Application {
         Button activityLogButton = createStyledButton("View Activity Log");
         Button systemStatusButton = createStyledButton("Check System Status");
 
-        activityLogButton.setOnAction(event -> showAlert("Feature", "View Activity Log"));
-        systemStatusButton.setOnAction(event -> showAlert("Feature", "Check System Status"));
+        // Create a label to display the system status message (initially empty)
+        Label systemStatusLabel = new Label();
+        systemStatusLabel.setFont(Font.font("Arial", 14));
+        systemStatusLabel.setStyle("-fx-text-fill: green;"); // Optionally set a color for the message
+
+        // Action for 'View Activity Log' button
+        activityLogButton.setOnAction(event -> {
+            // Switch to the view user activity log scene
+            stage.setScene(new Scene(createViewMaintenanceActivityLogScene(stage), 600, 450));
+        });
+
+        // Action for 'Check System Status' button
+        systemStatusButton.setOnAction(event -> {
+            // Update the system status label to display the message
+            systemStatusLabel.setText("The system is working");
+        });
 
         Button backButton = createStyledButton("Back");
         backButton.setOnAction(event -> stage.setScene(new Scene(createAdminDashboard(stage), 600, 450)));
 
-        layout.getChildren().addAll(instructions, activityLogButton, systemStatusButton, backButton);
+        // Add the components to the layout
+        layout.getChildren().addAll(instructions, activityLogButton, systemStatusButton, systemStatusLabel, backButton);
         return layout;
     }
-    private VBox createGenerateReportsScene(Stage stage) {
-        VBox layout = createBaseScene("Generate Reports");
 
-        Label instructions = new Label("Generate system reports:");
+    private VBox createViewMaintenanceActivityLogScene(Stage stage) {
+        VBox layout = createBaseScene("View Maintenance Activity Log");
+
+        Label instructions = new Label("View all maintenance activity logs:");
         instructions.setFont(Font.font("Arial", 14));
 
-        Button salesReportButton = createStyledButton("Generate Sales Report");
-        Button maintenanceReportButton = createStyledButton("Generate Maintenance Report");
-        Button userActivityReportButton = createStyledButton("Generate User Activity Report");
+        // Fetch maintenance activity records using UserManager
+        UserManager userManager = new UserManager();
+        List<UserManager.UserActivityRecord> activities = userManager.getAllUserActivities(); // Keep using the existing method
 
-        salesReportButton.setOnAction(event -> showAlert("Feature", "Generate Sales Report"));
-        maintenanceReportButton.setOnAction(event -> showAlert("Feature", "Generate Maintenance Report"));
-        userActivityReportButton.setOnAction(event -> showAlert("Feature", "Generate User Activity Report"));
+        // Create a table to display the maintenance activities
+        TableView<UserManager.UserActivityRecord> table = new TableView<>();
 
+        // Define the columns for the table
+        TableColumn<UserManager.UserActivityRecord, Integer> vehicleIdColumn = new TableColumn<>("Vehicle ID");
+        vehicleIdColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));  // Assuming these properties exist in UserActivityRecord
+
+        TableColumn<UserManager.UserActivityRecord, String> maintenanceDateColumn = new TableColumn<>("Maintenance Date");
+        maintenanceDateColumn.setCellValueFactory(new PropertyValueFactory<>("maintenanceDate"));  // Change 'activityDate' to 'maintenanceDate'
+
+        TableColumn<UserManager.UserActivityRecord, String> descriptionColumn = new TableColumn<>("Description");
+        descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
+
+        TableColumn<UserManager.UserActivityRecord, String> statusColumn = new TableColumn<>("Status");
+        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        // Add the columns to the table
+        table.getColumns().addAll(vehicleIdColumn, maintenanceDateColumn, descriptionColumn, statusColumn);
+
+        // Set the table data (maintenance activity records)
+        table.getItems().setAll(activities);
+
+        // Back button to return to the previous scene
         Button backButton = createStyledButton("Back");
         backButton.setOnAction(event -> stage.setScene(new Scene(createAdminDashboard(stage), 600, 450)));
 
-        layout.getChildren().addAll(instructions, salesReportButton, maintenanceReportButton, userActivityReportButton, backButton);
+        // Add components to the layout
+        layout.getChildren().addAll(instructions, table, backButton);
         return layout;
     }
 
-    private boolean isValidLogin(String username, String password) {
-        //return username.equals("admin") && password.equals("admin");
-        return true;
-    }
 
     private Button createStyledButton(String text) {
         Button button = new Button(text);

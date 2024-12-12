@@ -153,22 +153,40 @@ public class VehicleLog {
             return false; // Return false if there was an error
         }
     }
-    public int getVehicleIdByVin(String vin) {
-        String query = "SELECT vehicle_id FROM vehicles WHERE vin = ?";
+    public boolean TechnicianMaintenanceActivity(int vehicleId, String maintenanceDate, String description) {
+        // Insert the maintenance log into the vehicle_status table using the provided vehicle_id
+        String query = "INSERT INTO vehicle_status (vehicle_id, maintenance_date, description, status) VALUES (?, ?, ?, ?)";
         try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
-            statement.setString(1, vin); // Set VIN value in the query
-            ResultSet resultSet = statement.executeQuery();
+            statement.setInt(1, vehicleId); // Use the provided vehicle_id
+            statement.setString(2, maintenanceDate); // Set maintenance date
+            statement.setString(3, description); // Set maintenance description
+            statement.setString(4, "In Progress"); // Set status to "In Progress"
 
-            if (resultSet.next()) {
-                return resultSet.getInt("vehicle_id"); // Return the vehicle_id if found
-            } else {
-                return -1; // Return -1 if the VIN does not exist
-            }
+            int rowsAffected = statement.executeUpdate(); // Execute the insert query
+            return rowsAffected > 0; // Return true if maintenance log was successfully added
         } catch (SQLException e) {
             e.printStackTrace();
-            return -1; // Return -1 if there's an error in the query
+            return false; // Return false if there was an error inserting the maintenance log
         }
     }
+
+    public boolean updateVehicleStatus(int vehicleId, String newStatus) {
+        // Update the status of the maintenance activity for the vehicle in the vehicle_status table
+        String query = "UPDATE vehicle_status SET status = ? WHERE vehicle_id = ? AND status = 'In Progress'";
+
+        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setString(1, newStatus); // Set the new status
+            statement.setInt(2, vehicleId); // Set the vehicle ID
+
+            int rowsAffected = statement.executeUpdate(); // Execute the update query
+            return rowsAffected > 0; // Return true if the status was successfully updated
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false; // Return false if there was an error
+        }
+    }
+
+
 
     // Method to fetch all maintenance logs
     public List<MaintenanceLog> getAllMaintenanceLogs() {
