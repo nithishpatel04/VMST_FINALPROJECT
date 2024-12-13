@@ -11,6 +11,7 @@ module org.example.vmst_finalproject {
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
     requires java.sql;
+    requires mysql.connector.j;
 
     opens org.example.vmst_finalproject to javafx.fxml;
     exports org.example.vmst_finalproject;

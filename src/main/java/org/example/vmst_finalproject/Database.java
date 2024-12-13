@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class Database {
     private static final String URL = "jdbc:mysql://localhost:3306/VehicleMaintenanceDB";
     private static final String USER = "root"; // Replace with your DB username
-    private static final String PASSWORD = "sql@040901"; // Replace with your DB password
+    private static final String PASSWORD = "Pranopasha@7"; // Replace with your DB password
 
     static {
         try {

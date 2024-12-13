@@ -5,18 +5,10 @@ import java.util.List;
 import java.text.SimpleDateFormat;
 
 public class UserManager {
-    // Database connection method
-    private Connection connect() throws SQLException {
-        String url = "jdbc:mysql://localhost:3306/VehicleMaintenancedb"; // Adjust as needed
-        String user = "root";
-        String password = "sql@040901";
-        return DriverManager.getConnection(url, user, password);
-    }
-
     // Save a new user to the database
     public boolean saveUserToDatabase(String username, String role, String password) {
         String query = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, username);
             statement.setString(2, password);
             statement.setString(3, role);
@@ -32,7 +24,7 @@ public class UserManager {
     // Update an existing user's information
     public boolean updateUserInDatabase(int userId, String newUsername, String newRole) {
         String query = "UPDATE users SET username = ?, role = ? WHERE id = ?";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, newUsername);
             statement.setString(2, newRole);
             statement.setInt(3, userId);
@@ -48,7 +40,7 @@ public class UserManager {
     // Delete a user from the database
     public boolean deleteUserFromDatabase(int userId) {
         String query = "DELETE FROM users WHERE id = ?";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setInt(1, userId);
 
             int rowsAffected = statement.executeUpdate();
@@ -65,7 +57,7 @@ public class UserManager {
         List<UserActivityRecord> activities = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");  // Date format
 
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {

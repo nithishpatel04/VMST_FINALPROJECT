@@ -9,14 +9,9 @@ public class UserValidation {
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
-        // Database connection details
-        String dbURL = "jdbc:mysql://localhost:3306/VehicleMaintenanceDB";  // Update the URL if needed
-        String dbUsername = "root";  // Your database username
-        String dbPassword = "sql@040901";  // Your database password
-
         try {
-            // Connect to the database
-            conn = DriverManager.getConnection(dbURL, dbUsername, dbPassword);
+            // Connect to the database using the Database class
+            conn = Database.getConnection();
 
             // SQL query to check if the user exists in the users table
             String sql = "SELECT * FROM users WHERE username = ? AND password = ?";

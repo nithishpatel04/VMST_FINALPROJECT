@@ -5,15 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VehicleLog {
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/VehicleMaintenancedb"; // DB URL
-    private static final String DB_USERNAME = "root"; // DB username
-    private static final String DB_PASSWORD = "sql@040901"; // DB password
-
-    // Method to establish a database connection
-    private Connection connect() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
-    }
-
     // Existing method to log maintenance activity into the vehicle_maintenance_log table
     public boolean logMaintenance(int vehicleId, String maintenanceDate, String description) {
         // Validate if the vehicle exists based on vehicleId
@@ -27,7 +18,7 @@ public class VehicleLog {
         String vehicleMake = null;
         String vehicleModel = null;
 
-        try (Connection conn = connect(); PreparedStatement vehicleStatement = conn.prepareStatement(vehicleQuery)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement vehicleStatement = conn.prepareStatement(vehicleQuery)) {
             vehicleStatement.setInt(1, vehicleId); // Set vehicleId
             ResultSet vehicleResultSet = vehicleStatement.executeQuery();
 
@@ -42,7 +33,7 @@ public class VehicleLog {
 
         // Now insert the maintenance log along with the vehicle's make and model
         String query = "INSERT INTO vehicle_maintenance_log (vehicle_id, maintenance_date, description, vehicle_make, vehicle_model) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setInt(1, vehicleId); // Set vehicleId
             statement.setString(2, maintenanceDate); // Set maintenance date
             statement.setString(3, description); // Set maintenance description
@@ -60,7 +51,7 @@ public class VehicleLog {
     // Existing method to save vehicle
     public boolean saveVehicle(Vehicle vehicle) {
         String query = "INSERT INTO vehicles (make, model, year, vin, license_plate) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, vehicle.getMake());
             statement.setString(2, vehicle.getModel());
             statement.setInt(3, vehicle.getYear());
@@ -87,7 +78,7 @@ public class VehicleLog {
         String vehicleMake = null;
         String vehicleModel = null;
 
-        try (Connection conn = connect(); PreparedStatement vehicleStatement = conn.prepareStatement(vehicleQuery)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement vehicleStatement = conn.prepareStatement(vehicleQuery)) {
             vehicleStatement.setInt(1, vehicleId); // Set vehicleId
             ResultSet vehicleResultSet = vehicleStatement.executeQuery();
 
@@ -102,7 +93,7 @@ public class VehicleLog {
 
         // Insert the maintenance log
         String query = "INSERT INTO vehicle_maintenance_log (vehicle_id, maintenance_date, description, vehicle_make, vehicle_model) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setInt(1, vehicleId);
             statement.setString(2, maintenanceDate);
             statement.setString(3, description);
@@ -122,7 +113,7 @@ public class VehicleLog {
         String query = "SELECT maintenance_date, description, vehicle_make, vehicle_model FROM vehicle_maintenance_log";
         List<MaintenanceLog> logs = new ArrayList<>();
 
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
@@ -142,7 +133,7 @@ public class VehicleLog {
     // Method to check if the vehicleId exists in the vehicles table
     public boolean isVehicleIdExists(int vehicleId) {
         String query = "SELECT COUNT(*) FROM vehicles WHERE vehicle_id = ?"; // Use correct column name
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setInt(1, vehicleId); // Set the vehicle ID
             ResultSet resultSet = statement.executeQuery();
             resultSet.next();
@@ -153,10 +144,11 @@ public class VehicleLog {
             return false; // Return false if there was an error
         }
     }
+
     public boolean TechnicianMaintenanceActivity(int vehicleId, String maintenanceDate, String description) {
         // Insert the maintenance log into the vehicle_status table using the provided vehicle_id
         String query = "INSERT INTO vehicle_status (vehicle_id, maintenance_date, description, status) VALUES (?, ?, ?, ?)";
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setInt(1, vehicleId); // Use the provided vehicle_id
             statement.setString(2, maintenanceDate); // Set maintenance date
             statement.setString(3, description); // Set maintenance description
@@ -174,7 +166,7 @@ public class VehicleLog {
         // Update the status of the maintenance activity for the vehicle in the vehicle_status table
         String query = "UPDATE vehicle_status SET status = ? WHERE vehicle_id = ? AND status = 'In Progress'";
 
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             statement.setString(1, newStatus); // Set the new status
             statement.setInt(2, vehicleId); // Set the vehicle ID
 
@@ -186,14 +178,12 @@ public class VehicleLog {
         }
     }
 
-
-
     // Method to fetch all maintenance logs
     public List<MaintenanceLog> getAllMaintenanceLogs() {
         String query = "SELECT maintenance_date, description, vehicle_make, vehicle_model FROM vehicle_maintenance_log";
         List<MaintenanceLog> logs = new ArrayList<>();
 
-        try (Connection conn = connect(); PreparedStatement statement = conn.prepareStatement(query)) {
+        try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
             ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {

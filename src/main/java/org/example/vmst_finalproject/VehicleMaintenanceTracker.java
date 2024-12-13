@@ -7,6 +7,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import javafx.scene.control.cell.PropertyValueFactory;
 
@@ -279,7 +284,22 @@ public class VehicleMaintenanceTracker extends Application {
                 boolean isSaved = vehicleLog.saveVehicle(vehicle);
 
                 if (isSaved) {
-                    showAlert("Vehicle Saved", "The vehicle has been registered successfully.");
+                    // Retrieve the vehicle ID using the VIN
+                    String query = "SELECT vehicle_id FROM vehicles WHERE vin = ?";
+                    try (Connection conn = Database.getConnection(); PreparedStatement statement = conn.prepareStatement(query)) {
+                        statement.setString(1, vin);
+                        ResultSet resultSet = statement.executeQuery();
+
+                        if (resultSet.next()) {
+                            int vehicleId = resultSet.getInt("vehicle_id");
+                            showAlert("Vehicle Saved", "The vehicle has been registered successfully. Your vehicle ID is " + vehicleId + ".");
+                        } else {
+                            showAlert("Database Error", "Vehicle saved, but could not retrieve the vehicle ID.");
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        showAlert("Database Error", "Failed to retrieve the vehicle ID.");
+                    }
                 } else {
                     showAlert("Database Error", "Failed to save the vehicle.");
                 }
@@ -288,7 +308,6 @@ public class VehicleMaintenanceTracker extends Application {
                 showAlert("Invalid Input", "Please enter a valid numeric value for the year.");
             }
         });
-
         backButton.setOnAction(event -> {
             // Go back to the previous screen (Owner Dashboard or other scene)
             stage.setScene(new Scene(createOwnerDashboard(stage), 600, 450));
@@ -523,7 +542,7 @@ public class VehicleMaintenanceTracker extends Application {
         usernameField.setPromptText("Enter Username");
 
         TextField roleField = new TextField();
-        roleField.setPromptText("Enter Role (e.g., Admin, Technician)");
+        roleField.setPromptText("Enter Role (e.g., Admin, Manager, Vehicle Owner)");
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Enter Password");
@@ -534,13 +553,34 @@ public class VehicleMaintenanceTracker extends Application {
         Button saveButton = createStyledButton("Save");
         saveButton.setOnAction(event -> {
             String username = usernameField.getText();
-            String role = roleField.getText();
+            String role = roleField.getText().toLowerCase();
             String password = passwordField.getText();
 
             // Validate the input fields
             if (username.isEmpty() || role.isEmpty() || password.isEmpty()) {
                 System.out.println("Please fill in all fields.");
                 showAlert("Validation Error", "All fields are required.");
+                return;
+            }
+
+            // Validate username length
+            if (username.length() <= 4) {
+                System.out.println("Username must be greater than 4 characters.");
+                showAlert("Validation Error", "Username must be greater than 4 characters.");
+                return;
+            }
+
+            // Validate password length
+            if (password.length() <= 6) {
+                System.out.println("Password must be greater than 6 characters.");
+                showAlert("Validation Error", "Password must be greater than 6 characters.");
+                return;
+            }
+
+            // Validate role
+            if (!role.equals("admin") && !role.equals("manager") && !role.equals("vehicle owner")) {
+                System.out.println("Role must be either Admin, Manager, or Vehicle Owner.");
+                showAlert("Validation Error", "Role must be either Admin, techinician, or Vehicle Owner.");
                 return;
             }
 
