@@ -111,8 +111,5 @@ public class UserManager {
             return description;
         }
 
-        public String getStatus() {
-            return status;
-        }
     }
 }

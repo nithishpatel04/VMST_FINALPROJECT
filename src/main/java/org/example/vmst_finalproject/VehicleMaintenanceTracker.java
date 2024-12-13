@@ -578,9 +578,9 @@ public class VehicleMaintenanceTracker extends Application {
             }
 
             // Validate role
-            if (!role.equals("admin") && !role.equals("manager") && !role.equals("vehicle owner")) {
+            if (!role.equals("admin") && !role.equals("technician") && !role.equals("vehicle owner")) {
                 System.out.println("Role must be either Admin, Manager, or Vehicle Owner.");
-                showAlert("Validation Error", "Role must be either Admin, techinician, or Vehicle Owner.");
+                showAlert("Validation Error", "Role must be either Admin, technician, or Vehicle Owner.");
                 return;
             }
 
